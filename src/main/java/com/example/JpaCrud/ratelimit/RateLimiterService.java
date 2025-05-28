@@ -12,7 +12,7 @@ import io.github.bucket4j.Refill;
 
 @Component
 public class RateLimiterService {
-	private Bucket bucket;
+    private Bucket bucket;
 
     @PostConstruct
     public void setupBucket() {
@@ -26,4 +26,3 @@ public class RateLimiterService {
         }
     }
 }
-

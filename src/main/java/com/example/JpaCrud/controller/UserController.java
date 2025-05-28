@@ -1,15 +1,29 @@
 package com.example.JpaCrud.controller;
 
+import java.util.List;
+
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.example.JpaCrud.model.User;
 import com.example.JpaCrud.ratelimit.RateLimiterService;
 import com.example.JpaCrud.service.UserService;
-
-import java.util.List;
+import com.example.JpaCrud.validation.CheckUserExists;
 
 @RestController
+@RequestMapping
+@Validated
 public class UserController {
 
     @Autowired
@@ -19,27 +33,33 @@ public class UserController {
     private RateLimiterService rateLimiterService;
 
     @PostMapping("/users")
-    public User saveUser(@RequestBody User user) {
+    public ResponseEntity<User> saveUser(@Valid @RequestBody User user) {
         rateLimiterService.validateRequest();
-        return userService.saveUser(user);
+        return ResponseEntity.ok(userService.saveUser(user));
     }
 
     @GetMapping("/users")
-    public List<User> getUserList() {
+    public ResponseEntity<List<User>> getUserList() {
         rateLimiterService.validateRequest();
-        return userService.getUserList();
+        return ResponseEntity.ok(userService.getUserList());
+    }
+
+    @GetMapping("/users/{id}")
+    public ResponseEntity<User> getUserById(@PathVariable @CheckUserExists Long id) {
+        rateLimiterService.validateRequest();
+        return ResponseEntity.ok(userService.getUserById(id));
     }
 
     @PutMapping("/users/{id}")
-    public User updateUser(@RequestBody User user, @PathVariable("id") Long userId) {
+    public ResponseEntity<User> updateUser( @Valid @RequestBody User user, @PathVariable("id") @CheckUserExists Long userId) {
         rateLimiterService.validateRequest();
-        return userService.updateUser(user, userId);
+        return ResponseEntity.ok(userService.updateUser(user, userId));
     }
 
     @DeleteMapping("/users/{id}")
-    public String deleteUserById(@PathVariable("id") Long userId) {
-        rateLimiterService.validateRequest();
+    public ResponseEntity<String> deleteUserById(@PathVariable("id") @CheckUserExists Long userId) {
         userService.deleteUserById(userId);
-        return "Deleted Successfully";
+        return ResponseEntity.ok("User deleted successfully");
     }
 }
+

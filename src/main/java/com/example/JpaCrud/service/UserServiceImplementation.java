@@ -1,14 +1,15 @@
 package com.example.JpaCrud.service;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.example.JpaCrud.exception.UserNotFoundException;
 import com.example.JpaCrud.metrics.MetricsConfig;
 import com.example.JpaCrud.model.User;
 import com.example.JpaCrud.repository.UserRepository;
+
 
 @Service
 public class UserServiceImplementation implements UserService {
@@ -17,14 +18,11 @@ public class UserServiceImplementation implements UserService {
     private UserRepository userRepository;
 
     @Autowired
-    private MetricsConfig metrics;
+    private MetricsConfig metricsConfig;
 
     @Override
     public User saveUser(User user) {
-        if (user.getName() == null || user.getName().length() < 5) {
-            throw new IllegalArgumentException("Username must be at least 5 characters long.");
-        }
-        metrics.incrementUserCreated();
+        metricsConfig.incrementUserCreated();
         return userRepository.save(user);
     }
 
@@ -35,27 +33,27 @@ public class UserServiceImplementation implements UserService {
 
     @Override
     public User updateUser(User user, Long userId) {
-        User existing = userRepository.findById(userId)
-            .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
+        User existingUser = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (user.getName() == null || user.getName().length() < 5) {
-            throw new IllegalArgumentException("Username must be at least 5 characters long.");
+        if (Objects.nonNull(user.getName()) && !user.getName().isBlank()) {
+            existingUser.setName(user.getName());
         }
-        if (user.getEmail() == null || !user.getEmail().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$") || !user.getEmail().contains(".com")) {
-            throw new IllegalArgumentException("Invalid email format");
+
+        if (Objects.nonNull(user.getEmail()) && !user.getEmail().isBlank()) {
+            existingUser.setEmail(user.getEmail());
         }
-        existing.setName(user.getName());
-        existing.setEmail(user.getEmail());
-        return userRepository.save(existing);
+
+        return userRepository.save(existingUser);
     }
 
     @Override
     public void deleteUserById(Long userId) {
-    	User user = userRepository.findById(userId)
-    		    .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
+        userRepository.deleteById(userId);
+    }
 
-    		System.out.println("Deleting user: " + user.getName());
-    		userRepository.deleteById(userId);
-    		metrics.incrementUserDeleted();
+    @Override
+    public User getUserById(Long id) {
+        return userRepository.findById(id).orElseThrow(() -> new RuntimeException("User ID " + id + " : User not found"));
     }
 }
+
